@@ -23,7 +23,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       _notifyChange: function(source, event, value) {
         value = value === undefined ? this[source] : value;
         event = event || Polymer.CaseMap.camelToDashCase(source) + '-changed';
-        this.fire(event, {value: value}, 
+        this.fire(event, {value: value},
           {bubbles: false, cancelable: false, _useCache: true});
       },
 
@@ -162,7 +162,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         get: function() {
           // TODO(sjmiles): elide delegation for performance, good ROI?
           return this.__data__[property];
-        }
+        },
+        configurable: true
       };
       var setter = function(value) {
         this._propertySetter(property, value, effects);
@@ -221,8 +222,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         } else {
           // TODO(sorvell): even though we have a `value` argument, we *must*
           // lookup the current value of the property. Multiple listeners and
-          // queued events during configuration can theoretically lead to 
-          // divergence of the passed value from the current value, but we 
+          // queued events during configuration can theoretically lead to
+          // divergence of the passed value from the current value, but we
           // really need to track down a specific case where this happens.
           value = target[property];
           if (!isStructured) {
