@@ -78,18 +78,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       // returns cssText of properties that consume variables/mixins
       collectCssText: function(rule) {
-        var customCssText = '';
         var cssText = rule.parsedCssText;
         // NOTE: we support consumption inside mixin assignment
         // but not production, so strip out {...}
         cssText = cssText.replace(this.rx.BRACKETED, '')
           .replace(this.rx.VAR_ASSIGN, '');
         var parts = cssText.split(';');
-        for (var i=0, p; i<parts.length; i++) {
-          p = parts[i];
-          customCssText += p + ';\n';
-        }
-        return customCssText;
+        return parts.join(';\n');
       },
 
       collectPropertiesInCssText: function(cssText, props) {
@@ -179,6 +174,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         rule.cssText = output;
       },
 
+      // Apply keyframe transformations to the cssText of a given rule. The
+      // keyframeTransforms object is a map of keyframe names to transformer
+      // functions which take in cssText and spit out transformed cssText.
+      applyKeyframeTransforms: function(rule, keyframeTransforms) {
+        var output = rule.cssText;
+        if (this.rx.ANIMATION_MATCH.test(output)) {
+          for (var keyframe in keyframeTransforms) {
+            var transform = keyframeTransforms[keyframe];
+            output = transform(output);
+          }
+        }
+        rule.cssText = output;
+      },
+
       // Test if the rules in these styles matches the given `element` and if so,
       // collect any custom properties into `props`.
       propertyDataFromStyles: function(styles, element) {
@@ -254,13 +263,39 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           hostSelector;
         var hostRx = new RegExp(this.rx.HOST_PREFIX + rxHostSelector +
           this.rx.HOST_SUFFIX);
+        var keyframeTransforms = {};
+
         return styleTransformer.elementStyles(element, function(rule) {
           self.applyProperties(rule, properties);
-          if (rule.cssText && !nativeShadow) {
-            self._scopeSelector(rule, hostRx, hostSelector,
-              element._scopeCssViaAttr, scopeSelector);
+          self.applyKeyframeTransforms(rule, keyframeTransforms);
+          if (!nativeShadow) {
+            // If the rule is a keyframe selector, we put a transformation in
+            // the keyframeTransforms map so that it can be applied to other
+            // rules in the future. We use an anonymous function for the
+            // transformer so that we can avoid creating a new RegExp for every
+            // call to `applyKeyframeTransforms`.
+            if (Polymer.StyleUtil.isKeyframesSelector(rule)) {
+              var keyframesNameRx = new RegExp(rule.parent.keyframesName, 'g');
+              self._scopeKeyframes(rule.parent, scopeSelector);
+              keyframeTransforms[rule.parent.keyframesName] = function(cssText) {
+                return cssText.replace(
+                    keyframesNameRx, rule.parent.transformedKeyframesName);
+              };
+            } else if (rule.cssText) {
+              self._scopeSelector(rule, hostRx, hostSelector,
+                element._scopeCssViaAttr, scopeSelector);
+            }
           }
         });
+      },
+
+      // Transforms `@keyframes` names to be unique for the current host.
+      // Example: @keyframes foo-anim -> @keyframes foo-anim-x-foo-0
+      _scopeKeyframes: function(rule, scopeId) {
+        rule.transformedKeyframesName = rule.keyframesName + '-' + scopeId;
+        rule.transformedSelector = rule.transformedSelector || rule.selector;
+        rule.selector = rule.transformedSelector.replace(
+            rule.keyframesName, rule.transformedKeyframesName);
       },
 
       // Strategy: x scope shim a selector e.g. to scope `.x-foo-42` (via classes):
@@ -357,6 +392,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         // var(--a, fallback-literal(with-one-nested-parentheses))
         VAR_MATCH: /(^|\W+)var\([\s]*([^,)]*)[\s]*,?[\s]*((?:[^,)]*)|(?:[^;]*\([^;)]*\)))[\s]*?\)/gi,
         VAR_CAPTURE: /\([\s]*(--[^,\s)]*)(?:,[\s]*(--[^,\s)]*))?(?:\)|,)/gi,
+        ANIMATION_MATCH: /(animation\s*:)|(animation-name\s*:)/,
         IS_VAR: /^--/,
         BRACKETED: /\{[^}]*\}/g,
         HOST_PREFIX: '(?:^|[^.#[:])',

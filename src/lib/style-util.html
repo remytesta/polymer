@@ -44,6 +44,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         return style.__cssRules;
       },
 
+      // Tests if a rule is a keyframes selector, which looks almost exactly
+      // like a normal selector but is not (it has nothing to do with scoping
+      // for example).
+      isKeyframesSelector: function(rule) {
+        return rule.parent &&
+            rule.parent.type === Polymer.StyleUtil.ruleTypes.KEYFRAMES_RULE;
+      },
+
       forEachStyleRule: function(node, callback) {
         if (!node) {
           return;
@@ -51,8 +59,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         var skipRules = false;
         if (node.type === this.ruleTypes.STYLE_RULE) {
           callback(node);
-        } else if (node.type === this.ruleTypes.KEYFRAMES_RULE ||
-            node.type === this.ruleTypes.MIXIN_RULE) {
+        } else if (node.type === this.ruleTypes.MIXIN_RULE) {
           skipRules = true;
         }
         var r$ = node.rules;
