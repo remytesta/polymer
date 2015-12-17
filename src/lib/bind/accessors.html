@@ -165,7 +165,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }
       };
       var setter = function(value) {
-        this._propertySetter(property, value, effects);
+        //this._propertySetter(property, value, effects);
+        this._propertySetter(property, value, this._propertyEffects[property]);
       };
       // ReadOnly properties have a private setter only
       // TODO(kschaaf): Per current Bind factoring, we shouldn't

@@ -47,11 +47,38 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   Polymer.Base._addFeature({
 
-    _getExtendedPrototype: function(tag) {
-      return this._getExtendedNativePrototype(tag);
+    _getExtendedPrototype: function(tag, isNative) {
+      return isNative ? 
+        this._getExtendedNativePrototype(tag) :
+        this._getExtendedElementPrototype(tag);
     },
 
     _nativePrototypes: {}, // static
+    _registeredPrototypes: {}, // static
+
+    _getExtendedElementPrototype: function(tag) {
+      return this._registeredPrototypes[tag];
+    },
+
+    _registerPrototype: function(tag, proto) {
+      if (tag) {
+        this._registeredPrototypes[tag] = proto;
+      }
+    },
+
+    _getProto: function(tag) {
+      return this._registeredPrototypes[tag];
+    },
+
+    _getExtendedProtos: function(proto, base) {
+      var l = [];
+      var p = proto;
+      while (p && p !== base) {
+        l.unshift(p);
+        p = Object.getPrototypeOf(p);
+      }
+      return l;
+    },
 
     _getExtendedNativePrototype: function(tag) {
       var p = this._nativePrototypes[tag];

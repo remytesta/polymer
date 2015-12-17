@@ -97,7 +97,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         this._configureProperties(this.behaviors[i].properties, config);
       }
       // prototypical behavior
-      this._configureProperties(this.properties, config);
+      if (this.__extendedProtos) {
+        for (var i=0, p$=this.__extendedProtos; i < p$.length; i++) {
+          var p = p$[i];
+          if (p.hasOwnProperty('properties')) {
+            this._configureProperties(p.properties, config);
+          }
+        }
+      } else {
+        this._configureProperties(this.properties, config);
+      }
       // TODO(sorvell): it *may* be faster to loop over _propertyInfo but
       // there are some test issues.
       //this._configureProperties(this._propertyInfo, config);

@@ -38,7 +38,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     },
 
     _prepBehavior: function(b) {
-      this._addHostAttributes(b.hostAttributes);
+      if (b.hasOwnProperty('hostAttributes')) {
+        this._addHostAttributes(b.hostAttributes);
+      }
     },
 
     _initFeatures: function() {

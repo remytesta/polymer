@@ -73,11 +73,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     // by scanning `template`'s content
     //
     parseAnnotations: function(template) {
-      var list = [];
       var content = template._content || template.content;
-      this._parseNodeAnnotations(content, list,
-        template.hasAttribute('strip-whitespace'));
-      return list;
+      if (!content._notes) {
+        var list = content._notes = [];
+        this._parseNodeAnnotations(content, list,
+          template.hasAttribute('strip-whitespace'));
+      }
+      return content._notes;
     },
 
     // add annotations gleaned from subtree at `node` to `list`

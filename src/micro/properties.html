@@ -138,10 +138,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     // union properties, behaviors.properties, and propertyEffects
     _prepPropertyInfo: function() {
       this._propertyInfo = {};
-      for (var i=0, p; i < this.behaviors.length; i++) {
+      for (var i=0; i < this.behaviors.length; i++) {
         this._addPropertyInfo(this._propertyInfo, this.behaviors[i].properties);
       }
-      this._addPropertyInfo(this._propertyInfo, this.properties);
+      if (this.__extendedProtos) {
+        for (var i=0; i < this.__extendedProtos.length; i++) {
+          var p = this.__extendedProtos[i];
+          if (p.hasOwnProperty('properties')) {
+            this._addPropertyInfo(this._propertyInfo, p.properties);  
+          }
+        }
+      } else {
+        this._addPropertyInfo(this._propertyInfo, this.properties);  
+      }
       this._addPropertyInfo(this._propertyInfo, this._propertyEffects);
     },
 

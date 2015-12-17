@@ -58,6 +58,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
      */
     behaviors: [],
 
+    // TODO(sorvell): mixin super-class behaviors
     _desugarBehaviors: function() {
       if (this.behaviors.length) {
         this.behaviors = this._desugarSomeBehaviors(this.behaviors);
@@ -73,6 +74,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       // to optimize # of calls to `_copyOwnProperty`
       for (var i=behaviors.length-1; i>=0; i--) {
         this._mixinBehavior(behaviors[i]);
+      }
+      // mixin superclass behaviors
+      var extendedProto = this._getProto(this.extends);
+      if (extendedProto && extendedProto.behaviors) {
+        behaviors = extendedProto.behaviors.concat(behaviors);
       }
       return behaviors;
     },
@@ -105,6 +111,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     _prepBehaviors: function() {
       this._prepFlattenedBehaviors(this.behaviors);
+      // prep our prototype-as-behavior
+      if (this.__extendedProtos) {
+        for (var i=0, p$=this.__extendedProtos; i < p$.length; i++) {
+          this._prepBehavior(p$[i]);
+        }
+      } else {
+        this._prepBehavior(this);
+      }
     },
 
     _prepFlattenedBehaviors: function(behaviors) {
@@ -114,14 +128,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       for (var i=0, l=behaviors.length; i<l; i++) {
         this._prepBehavior(behaviors[i]);
       }
-      // prep our prototype-as-behavior
-      this._prepBehavior(this);
     },
 
     _doBehavior: function(name, args) {
       for (var i=0; i < this.behaviors.length; i++) {
         this._invokeBehavior(this.behaviors[i], name, args);
       }
+      // NOTE: subclasses must explicitly call superclass implementation, if desired.
       this._invokeBehavior(this, name, args);
     },
 
@@ -136,7 +149,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       for (var i=0; i < this.behaviors.length; i++) {
         this._marshalBehavior(this.behaviors[i]);
       }
-      this._marshalBehavior(this);
+      if (this.__extendedProtos) {
+        for (var i=0, p$=this.__extendedProtos; i < p$.length; i++) {
+          this._marshalBehavior(p$[i]);
+        }
+      } else {
+        this._marshalBehavior(this);
+      }
     }
 
   });

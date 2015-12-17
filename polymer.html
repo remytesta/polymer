@@ -26,6 +26,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   Polymer.Base._addFeature({
 
     _registerFeatures: function() {
+      this._aggregatedAttributes = null;
+      this._propertyEffects = null;
       // identity
       this._prepIs();
       // factory
@@ -51,9 +53,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     },
 
     _prepBehavior: function(b) {
-      this._addPropertyEffects(b.properties);
-      this._addComplexObserverEffects(b.observers);
-      this._addHostAttributes(b.hostAttributes);
+      if (b.hasOwnProperty('properties')) {
+        this._addPropertyEffects(b.properties);
+      }
+      if (b.hasOwnProperty('observers')) {
+        this._addComplexObserverEffects(b.observers);
+      }
+      if (b.hasOwnProperty('hostAttributes')) {
+        this._addHostAttributes(b.hostAttributes);
+      }
     },
 
     _initFeatures: function() {
@@ -100,7 +108,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     _marshalBehavior: function(b) {
       // establish listeners on instance
-      if (b.listeners) {
+      if (b.hasOwnProperty('listeners')) {
         this._listenListeners(b.listeners);
       }
     }

@@ -101,7 +101,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           var rules = styleUtil.rulesForStyle(s);
           cssText += nativeShadow ?
             styleUtil.toCssText(rules, callback) :
-            this.css(rules, element.is, element.extends, callback,
+            this.css(rules, element.is, element.__nativeExtends && 
+            element.extends, callback,
             element._scopeCssViaAttr) + '\n\n';
         }
         return cssText.trim();
