@@ -24,15 +24,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           rules = this.parser.parse(rules);
         }
         if (callback) {
-          this.forEachStyleRule(rules, callback);
+          this.forEachRule(rules, callback);
         }
         return this.parser.stringify(rules, preserveProperties);
       },
 
-      forRulesInStyles: function(styles, callback) {
+      forRulesInStyles: function(styles, styleRuleCallback, keyframesRuleCallback) {
         if (styles) {
           for (var i=0, l=styles.length, s; (i<l) && (s=styles[i]); i++) {
-            this.forEachStyleRule(this.rulesForStyle(s), callback);
+            this.forEachRule(
+                this.rulesForStyle(s),
+                styleRuleCallback,
+                keyframesRuleCallback);
           }
         }
       },
@@ -52,20 +55,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             rule.parent.type === Polymer.StyleUtil.ruleTypes.KEYFRAMES_RULE;
       },
 
-      forEachStyleRule: function(node, callback) {
+      forEachRule: function(node, styleRuleCallback, keyframesRuleCallback) {
         if (!node) {
           return;
         }
         var skipRules = false;
         if (node.type === this.ruleTypes.STYLE_RULE) {
-          callback(node);
+          styleRuleCallback(node);
+        } else if (keyframesRuleCallback &&
+                   node.type === this.ruleTypes.KEYFRAMES_RULE) {
+          keyframesRuleCallback(node);
         } else if (node.type === this.ruleTypes.MIXIN_RULE) {
           skipRules = true;
         }
         var r$ = node.rules;
         if (r$ && !skipRules) {
           for (var i=0, l=r$.length, r; (i<l) && (r=r$[i]); i++) {
-            this.forEachStyleRule(r, callback);
+            this.forEachRule(r, styleRuleCallback, keyframesRuleCallback);
           }
         }
       },

@@ -17,6 +17,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       --color: blue;
       --anim-color: red;
     }
+
+    .alternative {
+      --color: green;
+      --anim-color: blue;
+    }
   </style>
 
   <dom-module id="test-keyframes">
@@ -42,12 +47,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       Polymer({
         is: 'test-keyframes'
       });
-      
+
     </script>
   </dom-module>
 
-  <test-keyframes></test-keyframes>
-  
+  <p>Text should be the color blue. Background should animate from the color red to the color yellow, and then become transparent.</p>
+  <test-keyframes>red</test-keyframes>
+
+  <p>Text should be the color green. Background should animate from the color blue to the color yellow, and then become transparent.</p>
+  <test-keyframes class="alternative">blue</test-keyframes>
 
 </body>
-

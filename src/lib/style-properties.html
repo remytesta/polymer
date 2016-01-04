@@ -25,11 +25,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       // decorates styles with rule info and returns an array of used style
       // property names
       decorateStyles: function(styles) {
-        var self = this, props = {};
-        styleUtil.forRulesInStyles(styles, function(rule) {
+        var self = this, props = {}, keyframes = [];
+        styleUtil.forRulesInStyles(styles, function onStyleRule(rule) {
           self.decorateRule(rule);
           self.collectPropertiesInCssText(rule.propertyInfo.cssText, props);
+        }, function onKeyframesRule(rule) {
+          keyframes.push(rule);
         });
+        // Cache all found keyframes rules for later reference:
+        styles._keyframes = keyframes;
         // return this list of property names *consumes* in these styles.
         var names = [];
         for (var i in props) {
@@ -263,28 +267,32 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           hostSelector;
         var hostRx = new RegExp(this.rx.HOST_PREFIX + rxHostSelector +
           this.rx.HOST_SUFFIX);
+        var keyframesRules = element._styles._keyframes;
         var keyframeTransforms = {};
+
+        if (!nativeShadow) {
+          // For non-ShadowDOM, we transform all known keyframes rules in
+          // advance for the current scope. This allows us to catch keyframes
+          // rules that appear anywhere in the stylesheet:
+          for (var i = 0, keyframesRule = keyframesRules[i];
+               i < keyframesRules.length;
+               keyframesRule = keyframesRules[++i]) {
+            this._scopeKeyframes(keyframesRule, scopeSelector);
+            keyframeTransforms[keyframesRule.keyframesName] = function(rule, cssText) {
+              return cssText.replace(rule.keyframesNameRx, rule.transformedKeyframesName);
+            }.bind(this, keyframesRule);
+          }
+        }
 
         return styleTransformer.elementStyles(element, function(rule) {
           self.applyProperties(rule, properties);
           self.applyKeyframeTransforms(rule, keyframeTransforms);
-          if (!nativeShadow) {
-            // If the rule is a keyframe selector, we put a transformation in
-            // the keyframeTransforms map so that it can be applied to other
-            // rules in the future. We use an anonymous function for the
-            // transformer so that we can avoid creating a new RegExp for every
-            // call to `applyKeyframeTransforms`.
-            if (Polymer.StyleUtil.isKeyframesSelector(rule)) {
-              var keyframesNameRx = new RegExp(rule.parent.keyframesName, 'g');
-              self._scopeKeyframes(rule.parent, scopeSelector);
-              keyframeTransforms[rule.parent.keyframesName] = function(cssText) {
-                return cssText.replace(
-                    keyframesNameRx, rule.parent.transformedKeyframesName);
-              };
-            } else if (rule.cssText) {
-              self._scopeSelector(rule, hostRx, hostSelector,
-                element._scopeCssViaAttr, scopeSelector);
-            }
+
+          if (!nativeShadow &&
+              !Polymer.StyleUtil.isKeyframesSelector(rule) &&
+              rule.cssText) {
+            self._scopeSelector(rule, hostRx, hostSelector,
+              element._scopeCssViaAttr, scopeSelector);
           }
         });
       },
@@ -292,6 +300,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       // Transforms `@keyframes` names to be unique for the current host.
       // Example: @keyframes foo-anim -> @keyframes foo-anim-x-foo-0
       _scopeKeyframes: function(rule, scopeId) {
+        rule.keyframesNameRx = new RegExp(rule.keyframesName, 'g');
         rule.transformedKeyframesName = rule.keyframesName + '-' + scopeId;
         rule.transformedSelector = rule.transformedSelector || rule.selector;
         rule.selector = rule.transformedSelector.replace(
